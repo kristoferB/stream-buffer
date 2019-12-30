@@ -5,7 +5,7 @@ use pin::Pin;
 use pin_project_lite::pin_project;
 
 pin_project! {
-    /// ChannelMerger is a stream buffer that will fold messages waiting in 
+    /// StreamBuffer is a stream buffer that will fold messages waiting in 
     /// the incoming channel until the channel is empty or if the merge fn
     /// returns false. This will happen for each call to next. 
     /// 
@@ -16,7 +16,7 @@ pin_project! {
     /// # Example
     /// ```
     /// let (tx, rx) = channel(2);
-    /// let mut merger = ChannelMerger::new(
+    /// let mut merger = StreamBuffer::new(
     ///     rx,
     ///     |x: &mut usize, y: &usize| {  // merging until we get a 0
     ///         *x += y;
@@ -32,16 +32,16 @@ pin_project! {
     /// 
     /// ```
     ///
-    pub struct ChannelMerger<T, F> where F: FnMut(&mut T, &T) -> bool {
+    pub struct StreamBuffer<T, F> where F: FnMut(&mut T, &T) -> bool {
         #[pin] rx: Receiver<T>,
         merger: F, 
         buffer: Option<T>,
     }
 }
 
-impl<T, F> ChannelMerger<T, F> where F: FnMut(&mut T, &T) -> bool {
-    pub fn new(rx: Receiver<T>, merger: F) -> ChannelMerger<T, F> {
-        ChannelMerger{
+impl<T, F> StreamBuffer<T, F> where F: FnMut(&mut T, &T) -> bool {
+    pub fn new(rx: Receiver<T>, merger: F) -> StreamBuffer<T, F> {
+        StreamBuffer{
             rx, 
             merger,
             buffer: None,
@@ -49,7 +49,7 @@ impl<T, F> ChannelMerger<T, F> where F: FnMut(&mut T, &T) -> bool {
     }
 }
 
-impl<T, F> Stream for ChannelMerger<T, F>  where T: Clone, F: FnMut(&mut T, &T) -> bool {
+impl<T, F> Stream for StreamBuffer<T, F>  where T: Clone, F: FnMut(&mut T, &T) -> bool {
     type Item = T;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> task::Poll<Option<Self::Item>> {
@@ -70,9 +70,7 @@ impl<T, F> Stream for ChannelMerger<T, F>  where T: Clone, F: FnMut(&mut T, &T) 
                     *this.buffer = Some(x);
                     return task::Poll::Ready(temp);
                 }
-
             }
         }
-        
     }
 }
