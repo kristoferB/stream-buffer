@@ -2,10 +2,10 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use std::collections::HashMap;
 
 pub fn criterion_benchmark(c: &mut Criterion) {
-        //c.bench_function("hashmap state", |b| b.iter(|| black_box(eval_hash_state())));
+        c.bench_function("hashmap state", |b| b.iter(|| black_box(eval_hash_state())));
         c.bench_function("SPstate index", |b| b.iter(|| black_box(eval_SPState_index())));
         c.bench_function("SPstate path", |b| b.iter(|| black_box(eval_SPState_path())));
-        c.bench_function("SPstate old", |b| b.iter(|| black_box(eval_OLDSPState())));
+        //c.bench_function("SPstate old", |b| b.iter(|| black_box(eval_OLDSPState())));
         //c.bench_function("vec state", |b| b.iter(|| black_box(eval_vec())));
         //c.bench_function("hashmap vec state", |b| b.iter(|| black_box(eval_hash_vec())));
  
@@ -71,16 +71,16 @@ fn make_random_int() -> [usize; 10] {
 }
 fn make_random_path() -> [SPPath; 10] {
     [
-       SPPath::from_as_global(&["0".to_string()]),
-        SPPath::from_as_global(&["10".to_string()]),
-        SPPath::from_as_global(&["20".to_string()]),
-        SPPath::from_as_global(&["30".to_string()]),
-        SPPath::from_as_global(&["40".to_string()]),
-        SPPath::from_as_global(&["55".to_string()]),
-        SPPath::from_as_global(&["60".to_string()]),
-        SPPath::from_as_global(&["70".to_string()]),
-        SPPath::from_as_global(&["80".to_string()]),
-        SPPath::from_as_global(&["90".to_string()]),
+       SPPath::from_slice(&["0".to_string()]),
+        SPPath::from_slice(&["10".to_string()]),
+        SPPath::from_slice(&["20".to_string()]),
+        SPPath::from_slice(&["30".to_string()]),
+        SPPath::from_slice(&["40".to_string()]),
+        SPPath::from_slice(&["55".to_string()]),
+        SPPath::from_slice(&["60".to_string()]),
+        SPPath::from_slice(&["70".to_string()]),
+        SPPath::from_slice(&["80".to_string()]),
+        SPPath::from_slice(&["90".to_string()]),
     ]
 }
 
@@ -226,12 +226,12 @@ fn eval_SPState_index() -> usize {
         state.sp_value(&p3).unwrap() == &"30".to_spvalue();
 
         if ev1 || !ev1 {
-            state.next(&p6, AssignStateValue::SPValue(state.sp_value(&p1).unwrap().clone())).unwrap();
-            state.next(&p5, AssignStateValue::SPValue(state.sp_value(&p6).unwrap().clone())).unwrap();
-            state.next(&p2, AssignStateValue::SPValue(state.sp_value(&p5).unwrap().clone())).unwrap();
-            state.next(&p1, AssignStateValue::SPValue(state.sp_value(&p2).unwrap().clone())).unwrap();
-            state.next(&p7, AssignStateValue::SPValue(state.sp_value(&p1).unwrap().clone())).unwrap();
-            state.next(&p8, AssignStateValue::SPValue(state.sp_value(&p7).unwrap().clone())).unwrap();
+            state.next(&p6, (state.sp_value(&p1).unwrap().clone())).unwrap();
+            state.next(&p5, (state.sp_value(&p6).unwrap().clone())).unwrap();
+            state.next(&p2, (state.sp_value(&p5).unwrap().clone())).unwrap();
+            state.next(&p1, (state.sp_value(&p2).unwrap().clone())).unwrap();
+            state.next(&p7, (state.sp_value(&p1).unwrap().clone())).unwrap();
+            state.next(&p8, (state.sp_value(&p7).unwrap().clone())).unwrap();
         }
 
         state.take_transition();
@@ -260,12 +260,12 @@ fn eval_SPState_path() -> usize {
         state.sp_value_from_path(&r[3]).unwrap() == &"30".to_spvalue();
 
         if ev1 || !ev1 {
-            state.next_from_path(&r[6], AssignStateValue::SPValue(state.sp_value_from_path(&r[1]).unwrap().clone())).unwrap();
-            state.next_from_path(&r[5], AssignStateValue::SPValue(state.sp_value_from_path(&r[6]).unwrap().clone())).unwrap();
-            state.next_from_path(&r[2], AssignStateValue::SPValue(state.sp_value_from_path(&r[5]).unwrap().clone())).unwrap();
-            state.next_from_path(&r[1], AssignStateValue::SPValue(state.sp_value_from_path(&r[2]).unwrap().clone())).unwrap();
-            state.next_from_path(&r[7], AssignStateValue::SPValue(state.sp_value_from_path(&r[1]).unwrap().clone())).unwrap();
-            state.next_from_path(&r[8], AssignStateValue::SPValue(state.sp_value_from_path(&r[7]).unwrap().clone())).unwrap();
+            state.next_from_path(&r[6], (state.sp_value_from_path(&r[1]).unwrap().clone())).unwrap();
+            state.next_from_path(&r[5], (state.sp_value_from_path(&r[6]).unwrap().clone())).unwrap();
+            state.next_from_path(&r[2], (state.sp_value_from_path(&r[5]).unwrap().clone())).unwrap();
+            state.next_from_path(&r[1], (state.sp_value_from_path(&r[2]).unwrap().clone())).unwrap();
+            state.next_from_path(&r[7], (state.sp_value_from_path(&r[1]).unwrap().clone())).unwrap();
+            state.next_from_path(&r[8], (state.sp_value_from_path(&r[7]).unwrap().clone())).unwrap();
         }
 
         state.take_transition();
@@ -276,46 +276,13 @@ fn eval_SPState_path() -> usize {
     k 
 }
 
-#[allow(clippy::logic_bug)]
-fn eval_OLDSPState() -> usize {
-    let mut state = make_oldstate(100);
-    let r = make_random_path();
-    let mut k = 0;
-
-    for i in 0 .. 1000 {
-        let ev1 = state.get_value(&r[0]).unwrap() == &"0".to_spvalue() && 
-        state.get_value(&r[3]).unwrap() == &"30".to_spvalue() && 
-        !(state.get_value(&r[4]).unwrap() == &"40".to_spvalue()) || 
-        state.get_value(&r[5]).unwrap() == &"50".to_spvalue() && 
-        state.get_value(&r[2]).unwrap() == &"20".to_spvalue() && 
-        state.get_value(&r[6]).unwrap() == &"60".to_spvalue() || 
-        state.get_value(&r[7]).unwrap() == &"70".to_spvalue() && 
-        state.get_value(&r[8]).unwrap() == &"80".to_spvalue() || 
-        state.get_value(&r[3]).unwrap() == &"30".to_spvalue();
-
-        if ev1 || !ev1 {
-            state.insert(&r[6], OLDAssignStateValue::SPValue(state.get_value(&r[1]).unwrap().clone())).unwrap();
-            state.insert(&r[5], OLDAssignStateValue::SPValue(state.get_value(&r[6]).unwrap().clone())).unwrap();
-            state.insert(&r[2], OLDAssignStateValue::SPValue(state.get_value(&r[5]).unwrap().clone())).unwrap();
-            state.insert(&r[1], OLDAssignStateValue::SPValue(state.get_value(&r[2]).unwrap().clone())).unwrap();
-            state.insert(&r[7], OLDAssignStateValue::SPValue(state.get_value(&r[1]).unwrap().clone())).unwrap();
-            state.insert(&r[8], OLDAssignStateValue::SPValue(state.get_value(&r[7]).unwrap().clone())).unwrap();
-        }
-
-        state.take_all_OLDnext();
-
-        k = i;
-    }
-
-    k 
-}
 
 fn make_hashmap_state(size: usize) -> HashMap<SPPath, SPValue> {
     let mut hm = HashMap::new();
     for i in 0 .. size {
         let name = i.to_string();
         let value = name.to_spvalue();
-        let path = SPPath::from_as_global(&[name]);
+        let path = SPPath::from_slice(&[name]);
         hm.insert(path, value);
     }
     hm
@@ -338,20 +305,20 @@ fn eval_hash_state() -> usize {
         state.get(&r[8]).unwrap() == &"80".to_spvalue() || 
         state.get(&r[3]).unwrap() == &"30".to_spvalue();
 
-        // if ev1 || !ev1 {
-        //     let r4 = state.get(&r[4]).unwrap().clone();
-        //     let r2 = state.get(&r[2]).unwrap().clone();
-        //     let r6 = state.get(&r[6]).unwrap().clone();
-        //     let r7 = state.get(&r[7]).unwrap().clone();
-        //     let r9 = state.get(&r[9]).unwrap().clone();
-        //     let r1 = state.get(&r[1]).unwrap().clone();
-        //     upd_state(&mut state, r[6].clone(), r4);
-        //     upd_state(&mut state, r[5].clone(), r2);
-        //     upd_state(&mut state, r[2].clone(), r6);
-        //     upd_state(&mut state, r[1].clone(), r7);
-        //     upd_state(&mut state, r[7].clone(), r9);
-        //     upd_state(&mut state, r[8].clone(), r1);
-        // }
+        if ev1 || !ev1 {
+            let r4 = state.get(&r[4]).unwrap().clone();
+            let r2 = state.get(&r[2]).unwrap().clone();
+            let r6 = state.get(&r[6]).unwrap().clone();
+            let r7 = state.get(&r[7]).unwrap().clone();
+            let r9 = state.get(&r[9]).unwrap().clone();
+            let r1 = state.get(&r[1]).unwrap().clone();
+            upd_state(&mut state, r[6].clone(), r4);
+            upd_state(&mut state, r[5].clone(), r2);
+            upd_state(&mut state, r[2].clone(), r6);
+            upd_state(&mut state, r[1].clone(), r7);
+            upd_state(&mut state, r[7].clone(), r9);
+            upd_state(&mut state, r[8].clone(), r1);
+        }
 
         k = i;
     }
@@ -365,19 +332,10 @@ fn make_state(size: usize) -> SPState {
     for i in 0 .. size {
         let name = i.to_string();
         let value = name.to_spvalue();
-        let path = SPPath::from_as_global(&[name]);
+        let path = SPPath::from_slice(&[name]);
         v.push((path, value));
     }
     SPState::new_from_values(&v)
 }
 
-fn make_oldstate(size: usize) -> OLDSPState {
-    let mut s = HashMap::new();
-    for i in 0 .. size {
-        let name = i.to_string();
-        let value = name.to_oldstate();
-        let path = SPPath::from_as_global(&[name]);
-        s.insert(path, value);
-    }
-    OLDSPState{s}
-}
+
